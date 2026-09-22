@@ -1,0 +1,53 @@
+{
+  "date": "2026-09-16",
+  "chapters": [
+    {
+      "time": "04:30",
+      "title": "清晨",
+      "text": "天还没亮，家里和酒店房间就已经开始忙起来了。",
+      "scene": "preparation"
+    },
+    {
+      "time": "08:20",
+      "title": "化妆",
+      "text": "妈妈一直站在旁边看。",
+      "scene": "preparation"
+    },
+    {
+      "time": "09:40",
+      "title": "准备出门",
+      "text": "",
+      "scene": "preparation"
+    },
+    {
+      "time": "10:20",
+      "title": "接亲",
+      "text": "",
+      "scene": "pickup"
+    },
+    {
+      "time": "11:30",
+      "title": "到达酒店",
+      "text": "",
+      "scene": "pickup"
+    },
+    {
+      "time": "12:08",
+      "title": "婚礼仪式",
+      "text": "",
+      "scene": "ceremony"
+    },
+    {
+      "time": "13:20",
+      "title": "合照",
+      "text": "",
+      "scene": "family"
+    },
+    {
+      "time": "18:00",
+      "title": "晚宴",
+      "text": "",
+      "scene": "banquet"
+    }
+  ]
+}

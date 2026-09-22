@@ -1,0 +1,63 @@
+# 推送到 main 就自动构建并发布到 GitHub Pages。
+#
+# 三个容易踩的点，这里都处理了：
+# 1. base 路径：项目站点的地址是 https://<user>.github.io/<repo>/，
+#    所以构建时必须把 vite 的 base 设成 /<repo>/，否则资源全部 404。
+#    这里从 github.event.repository.name 取仓库名，不写死。
+# 2. .nojekyll 与 404.html：由 scripts/postbuild.mjs 生成（SPA 兜底 + 保住下划线开头的产物）。
+# 3. 路由 base：src/router 用的是 createWebHistory(import.meta.env.BASE_URL)，与上面的 base 自动一致。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck & Render checks
+        run: |
+          npm run typecheck
+          npm run render-check
+
+      - name: Build
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

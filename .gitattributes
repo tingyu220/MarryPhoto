@@ -1,0 +1,10 @@
+# 统一换行，避免 Windows/macOS 协作时出现满屏 CRLF 差异
+* text=auto eol=lf
+
+# 图片与字体一律按二进制处理，不做任何转换
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.avif binary
+*.woff2 binary

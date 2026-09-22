@@ -1,0 +1,43 @@
+{
+  "name": "Wedding Memory",
+  "heroTitle": "OUR DAY",
+  "couple": "姐姐 & 姐夫",
+  "heroPhotoId": null,
+  "date": "2026-09-16",
+  "dateDisplay": "2026 · 09 · 16",
+  "secondScreen": {
+    "lines": [
+      "这一天，我拍下了很多照片。",
+      "有些很漂亮，有些甚至没有对焦。",
+      "但我还是想把它们全部留下来。"
+    ],
+    "cta": "View Memories"
+  },
+  "nav": [
+    {
+      "label": "精选",
+      "to": "/featured"
+    },
+    {
+      "label": "这一天",
+      "to": "/story"
+    },
+    {
+      "label": "全部照片",
+      "to": "/gallery"
+    },
+    {
+      "label": "人物",
+      "to": "/people"
+    },
+    {
+      "label": "瞬间",
+      "to": "/moments"
+    },
+    {
+      "label": "写给姐姐",
+      "to": "/letter"
+    }
+  ],
+  "footer": "2026.09.16 · 这一天"
+}

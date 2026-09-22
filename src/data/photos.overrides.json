@@ -1,0 +1,304 @@
+{
+  "P0001": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "酒店房间里摆满红色中式嫁妆与聘礼"
+  },
+  "P0002": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "房间里摆满红色婚嫁用品和打开的行李箱"
+  },
+  "P0003": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "酒店房间里堆满红色嫁妆箱包与床品礼盒"
+  },
+  "P0004": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "酒店房间里堆满红色聘礼嫁妆和气球"
+  },
+  "P0005": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "房间里堆满红色行李箱和礼盒"
+  },
+  "P0006": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "酒店房间里摆满红色婚庆礼品和气球"
+  },
+  "P0007": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "化妆师为穿白纱的新娘整理发型"
+  },
+  "P0008": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "红色行李箱里摆满陪嫁用品"
+  },
+  "P0009": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "喜盆、喜杯、喜镜与糖果礼盒"
+  },
+  "P0010": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "双喜洗漱套装与圆镜摆在黑色桌面上"
+  },
+  "P0011": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [],
+    "tags": [
+      "detail",
+      "scene",
+      "preparation"
+    ],
+    "description": "堆满红色喜被和行李箱的聘礼现场"
+  },
+  "P0012": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "化妆师正在给新娘化妆"
+  },
+  "P0013": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "化妆师为新娘整理妆容"
+  },
+  "P0014": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "化妆师给新娘补妆"
+  },
+  "P0015": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘穿白纱坐在铺白床单的大床上笑"
+  },
+  "P0016": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在酒店大床上，床边有气球"
+  },
+  "P0017": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在贴满红双喜的婚床上"
+  },
+  "P0018": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在酒店大床上"
+  },
+  "P0019": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在婚床上"
+  },
+  "P0020": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在欧式雕花床头的大床上"
+  },
+  "P0021": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在铺白床品的床上"
+  },
+  "P0022": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在撒满红双喜的婚床上"
+  },
+  "P0023": {
+    "featured": false,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘坐在床上手举红色囍字"
+  },
+  "P0024": {
+    "featured": true,
+    "moment": false,
+    "scene": "preparation",
+    "people": [
+      "sister"
+    ],
+    "tags": [
+      "portrait",
+      "preparation"
+    ],
+    "description": "新娘手持红色囍字剪纸"
+  }
+}
