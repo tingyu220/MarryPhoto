@@ -87,6 +87,20 @@ const vueRouterStub = {
 const cache = new Map()
 let collector = null
 
+/**
+ * 源码里的 import.meta.env.* 必须先替换成字面量。
+ * 原因：这个渲染器用 new Function 执行转译后的代码，而 new Function 里
+ * 不存在 import.meta（它不是模块作用域），会直接抛
+ * "Cannot use 'import.meta' outside a module"。
+ * src/router/index.ts 用了 import.meta.env.BASE_URL，正是靠这一步才能被加载。
+ */
+const IMPORT_META_ENV = { BASE_URL: '/', MODE: 'test', DEV: false, PROD: true, SSR: false }
+function shimImportMeta(source) {
+  return source.replace(/import\.meta\.env\.(\w+)/g, (_m, key) =>
+    JSON.stringify(Object.prototype.hasOwnProperty.call(IMPORT_META_ENV, key) ? IMPORT_META_ENV[key] : '')
+  )
+}
+
 function resolveSpec(spec, fromFile) {
   if (spec.startsWith('@/')) spec = path.join(ROOT, 'src', spec.slice(2))
   else if (spec.startsWith('.')) spec = path.resolve(path.dirname(fromFile), spec)
@@ -121,7 +135,7 @@ export function load(file) {
     return data
   }
   if (ext === '.ts') {
-    const out = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+    const out = ts.transpileModule(shimImportMeta(fs.readFileSync(file, 'utf8')), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, isolatedModules: true },
       fileName: file
     }).outputText
@@ -150,6 +164,11 @@ export function load(file) {
     } catch (err) {
       collector?.(label, false, String(err.message))
     }
+  }
+
+  // <script setup> 里同样可能出现 import.meta.env.*
+  for (const block of [descriptor.script, descriptor.scriptSetup]) {
+    if (block) block.content = shimImportMeta(block.content)
   }
 
   const compiled = sfc.compileScript(descriptor, {
