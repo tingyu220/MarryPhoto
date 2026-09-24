@@ -138,8 +138,26 @@ src/data/photos.overrides.json
 
 | 平台 | 地址 | 可见性 |
 | --- | --- | --- |
-| **Cloudflare Workers**（B1 方案，主） | <https://marryphoto.3069508080.workers.dev> | 待加 Cloudflare Access 后为"验证后可见" |
+| **Cloudflare Workers**（主） | <https://marryphoto.3069508080.workers.dev> | ✅ **密码保护已生效**（见下） |
 | GitHub Pages（A 方案，备份） | <https://tingyu220.github.io/MarryPhoto/> | ⚠️ 公开 |
+
+### 密码保护（当前生效中）
+
+站点前面挂了一个 Worker（`worker/index.js`），所有请求先过鉴权再交给静态资源。
+
+~~~bash
+# 换密码（存在 Worker 的加密变量里，不会进代码、不会进仓库）
+'新密码' | npx wrangler secret put SITE_PASSWORD
+~~~
+
+两个必须知道的坑：
+
+1. `wrangler.jsonc` 里的 **`run_worker_first: true` 不能删** —— 默认情况下静态资源命中就直接返回、
+   **根本不进 Worker**，密码校验会被完全绕过（实测过：不带密码也是 200）。
+2. 本机访问 `api.cloudflare.com` 需要走代理，否则 `wrangler` 报 `fetch failed`。
+
+想升级成"按邮箱授权 + 可撤销"（Cloudflare Access）时，删掉 `worker/index.js` 与 `main` 字段即可，
+两件事不冲突。
 
 Cloudflare 的部署命令：
 

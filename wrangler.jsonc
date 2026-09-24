@@ -1,18 +1,26 @@
 {
-  // Cloudflare Workers 静态资源托管（B1 方案：Pages/Workers + Access 邮箱验证）
+  // Cloudflare Workers 静态资源托管 + 密码保护
   //
-  // 为什么不改任何构建配置：Workers 上站点在根路径 '/'，
+  // 为什么不改构建配置：Workers 上站点在根路径 '/'，
   // 而 vite.config.ts 的 base 默认就是 '/'（只有 GitHub Pages 才需要 /MarryPhoto/ 子路径）。
-  // 所以同一份 dist/ 两边都能用，切平台不需要改一行代码。
+  // 同一份 dist/ 两边通用。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "marryphoto",
   "compatibility_date": "2026-09-01",
 
-  // 静态站点：dist/ 整体上传
+  // 主脚本先跑，鉴权通过后再交给静态资源
+  "main": "worker/index.js",
+
   "assets": {
     "directory": "./dist",
-    // history 模式路由的 SPA 兜底：/gallery 这类路径没有对应文件时，
-    // 直接返回 index.html 交给前端路由解析（比 Pages 的 404.html 更干净）
-    "not_found_handling": "single-page-application"
-  }
+    "binding": "ASSETS",
+    // history 模式路由的 SPA 兜底：/gallery 这类路径没有对应文件时直接返回 index.html
+    "not_found_handling": "single-page-application",
+    // 关键：默认情况下静态资源命中就直接返回、**根本不进 Worker**，
+    // 于是密码校验会被绕过（实测：不带密码也能 200）。
+    // run_worker_first = true 让所有请求先过 Worker，鉴权之后才交给 ASSETS。
+    "run_worker_first": true
+  },
+
+  "observability": { "enabled": true }
 }
