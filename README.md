@@ -134,9 +134,29 @@ src/data/photos.overrides.json
 
 ## 部署
 
-- 本地 / 内网：`npm run preview` 或任意静态服务器。
-- 半公开：GitHub Pages（免费，但**本质公开**）。
-- 正式推荐：Cloudflare Pages + Cloudflare Access（真正需要验证才能访问）。
+### 现在的方式：GitHub Pages（已上线）
+
+**线上地址：<https://tingyu220.github.io/MarryPhoto/>**
+
+推送到 `main` 就会自动构建并发布（`.github/workflows/deploy-pages.yml`）。
+流水线里跑了 `typecheck` 与 `render-check`，**检查不过就不会发布**。
+
+三个必须保留的配置（改动会导致白屏或 404）：
+
+| 配置 | 作用 |
+| --- | --- |
+| `vite.config.ts` 的 `base`（由 `VITE_BASE_PATH` 注入 `/MarryPhoto/`） | 项目站点的资源在子路径下，不设就全 404 |
+| `createWebHistory(import.meta.env.BASE_URL)` | 路由 base 必须与上面的 base 一致 |
+| `scripts/postbuild.mjs` 产出 `.nojekyll` 与 `404.html` | 前者防止 Jekyll 吞掉下划线开头的产物；后者让 `/gallery` 这类深链接刷新后仍能打开 |
+
+### ⚠️ 关于隐私
+
+**这个仓库是 PUBLIC，页面地址也是公开的** —— 任何拿到链接的人都能看到全部照片。
+`noindex` 只挡搜索引擎，挡不住人。把仓库改成 private 也**不能**让站点变私密
+（GitHub 免费版只能从公开仓库发布 Pages）。
+
+如果照片需要真正限制访问，改用 **Cloudflare Pages + Cloudflare Access**（需要邮箱验证）。
+本项目的产物是纯静态的，换平台不需要改任何代码，只要重新构建即可。
 
 > GitHub Pages 的图片资源是公开的，前端做一个"输入密码"的页面**不是安全措施**。
 > 家庭照片请走 Cloudflare Access。
