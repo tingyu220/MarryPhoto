@@ -116,9 +116,12 @@ function mergeOne(tech: PhotoTech, overrides: PhotoOverrides | undefined): Photo
     src: tech.src,
     thumb: tech.thumb,
     medium: tech.medium,
+    large: tech.large,
     blur: tech.blur,
     width: tech.width,
     height: tech.height,
+    // 可选透传：查看器用它写 srcset 的宽度描述符，缺了也不影响任何现有页面
+    ...(tech.largeWidth ? { largeWidth: tech.largeWidth, largeHeight: tech.largeHeight } : {}),
     ratio: tech.ratio,
     color: tech.color,
     order: tech.order,

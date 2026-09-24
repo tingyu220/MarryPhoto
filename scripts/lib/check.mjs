@@ -163,22 +163,21 @@ export async function runChecks(options = {}) {
     })
   }
 
-  // ---- 4. 缺失的产物文件 ----
-  const missing = { thumb: [], medium: [], preview: [], blur: [] }
+  // ---- 4. 缺失的产物文件（五档：preview / large / medium / thumb / blur）----
+  const VARIANT_NAMES = ['preview', 'large', 'medium', 'thumb', 'blur']
+  const missing = { preview: [], large: [], medium: [], thumb: [], blur: [] }
   for (const photo of allPhotos) {
     if (typeof photo?.id !== 'string') continue
-    for (const name of ['thumb', 'medium', 'preview', 'blur']) {
+    for (const name of VARIANT_NAMES) {
       const file = path.join(publicRoot, name, photo.id + '.webp')
       if (!fs.existsSync(file)) missing[name].push(photo.id)
     }
   }
-  const missingTotal = missing.thumb.length + missing.medium.length + missing.preview.length + missing.blur.length
+  const missingTotal = VARIANT_NAMES.reduce((sum, name) => sum + missing[name].length, 0)
   if (missingTotal > 0) {
-    const lines = []
-    if (missing.preview.length) lines.push('preview 缺 ' + missing.preview.length + ' 个：' + sample(missing.preview))
-    if (missing.medium.length) lines.push('medium 缺 ' + missing.medium.length + ' 个：' + sample(missing.medium))
-    if (missing.thumb.length) lines.push('thumb 缺 ' + missing.thumb.length + ' 个：' + sample(missing.thumb))
-    if (missing.blur.length) lines.push('blur 缺 ' + missing.blur.length + ' 个：' + sample(missing.blur))
+    const lines = VARIANT_NAMES.filter((name) => missing[name].length > 0).map(
+      (name) => name + ' 缺 ' + missing[name].length + ' 个：' + sample(missing[name])
+    )
     errors.push({
       title: '缺失的产物文件：' + missingTotal + ' 个',
       detail: lines.join('\n           ') + '  —— 运行 npm run photos 重新生成'

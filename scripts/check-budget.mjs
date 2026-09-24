@@ -22,7 +22,11 @@ const BUDGET = {
   totalJs: 400,      // 所有 JS 分包合计（不是首屏下载量，只防失控）
   thumbAvg: 60,      // 单张缩略图平均
   mediumAvg: 200,    // 单张中图平均（桌面端中等尺寸展示用；介于 thumb 与 preview 之间）
-  previewAvg: 500    // 单张预览图平均（真实照片会比现在大很多，这条才是真防线）
+  previewAvg: 500,   // 单张预览图平均（真实照片会比现在大很多，这条才是真防线）
+  // 单张超清图平均（长边 3840，只在"高 DPI / 放大查看"时下载，但会进仓库与部署体积）。
+  // 实测（24 张 6000×4000 真实照片，q86）= 平均 782KB / 最大 1169KB，所以 1500 是真防线而非摆设：
+  // 约 1.9 倍余量，一旦某批照片让它翻倍，说明质量或规格被改坏了。
+  largeAvg: 1500
 }
 
 let failed = 0
@@ -68,7 +72,8 @@ check('路由级代码分割生效（≥5 个页面分包）', js.filter((f) => 
 for (const [dir, limit, label] of [
   ['thumb', BUDGET.thumbAvg, '缩略图'],
   ['medium', BUDGET.mediumAvg, '中图'],
-  ['preview', BUDGET.previewAvg, '预览图']
+  ['preview', BUDGET.previewAvg, '预览图'],
+  ['large', BUDGET.largeAvg, '超清图']
 ]) {
   const d = path.join(PHOTOS, dir)
   if (!fs.existsSync(d)) continue

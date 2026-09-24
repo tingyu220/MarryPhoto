@@ -8,9 +8,9 @@
  *
  * 流程：
  *   扫描 photos/original/** → 读 EXIF 拍摄时间 → 分配稳定 ID（photos/index.json）
- *   → sharp 生成 thumb/medium/preview/blur 四层 WebP + 主色 → 写 src/data/photos.json → 校验 overrides
+ *   → sharp 生成 thumb/medium/large/preview/blur 五档 WebP + 主色 → 写 src/data/photos.json → 校验 overrides
  *
- * 增量语义：index.json 里有记录、且四个产物都存在 → 跳过生成（缺 medium 这类"新加的档"会自动补生成；
+ * 增量语义：index.json 里有记录、且五个产物都存在 → 跳过生成（缺 large 这类"新加的档"会自动补生成；
  * 但仍从既有 preview 读回
  * width/height/主色，保证 photos.json 与全量重生成完全一致）。
  * ID 语义：已分配过的文件永不重新分配；占位图留下的 placeholder/* 伪记录会被清掉。
@@ -187,11 +187,13 @@ export async function runPipeline(options = {}) {
 
   let thumbBytes = 0
   let mediumBytes = 0
+  let largeBytes = 0
   let previewBytes = 0
   let blurBytes = 0
   for (const photo of records) {
     thumbBytes += await fileBytes(variantPath(outRoot, 'thumb', photo.id))
     mediumBytes += await fileBytes(variantPath(outRoot, 'medium', photo.id))
+    largeBytes += await fileBytes(variantPath(outRoot, 'large', photo.id))
     previewBytes += await fileBytes(variantPath(outRoot, 'preview', photo.id))
     blurBytes += await fileBytes(variantPath(outRoot, 'blur', photo.id))
   }
@@ -202,6 +204,7 @@ export async function runPipeline(options = {}) {
   log(
     '  产物体积：thumb 平均 ' + humanBytes(Math.round(thumbBytes / n)) +
       ' · medium 平均 ' + humanBytes(Math.round(mediumBytes / n)) +
+      ' · large 平均 ' + humanBytes(Math.round(largeBytes / n)) +
       ' · preview 平均 ' + humanBytes(Math.round(previewBytes / n)) +
       ' · blur 平均 ' + humanBytes(Math.round(blurBytes / n))
   )
@@ -218,7 +221,7 @@ export async function runPipeline(options = {}) {
     failures,
     written: true,
     generatedAt: payload.generatedAt,
-    bytes: { thumb: thumbBytes, medium: mediumBytes, preview: previewBytes, blur: blurBytes }
+    bytes: { thumb: thumbBytes, medium: mediumBytes, large: largeBytes, preview: previewBytes, blur: blurBytes }
   }
 }
 

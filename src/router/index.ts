@@ -13,6 +13,8 @@ export const routes: RouteRecordRaw[] = [
   { path: '/people', name: 'people', component: () => import('@/views/PeopleView.vue'), meta: { title: '人物' } },
   { path: '/moments', name: 'moments', component: () => import('@/views/MomentsView.vue'), meta: { title: '瞬间' } },
   { path: '/letter', name: 'letter', component: () => import('@/views/LetterView.vue'), meta: { title: '写给姐姐' } },
+  // 影像馆是独立页面，不是 /gallery 的一种浏览模式：它看的是同一批照片，但换了一种空间。
+  { path: '/experience', name: 'experience', component: () => import('@/views/ExperienceView.vue'), meta: { title: '影像馆' } },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') }
 ]
 

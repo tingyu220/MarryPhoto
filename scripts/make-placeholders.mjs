@@ -37,7 +37,7 @@ import { VARIANTS, ensureDirFor, extractColor, fileBytes, humanBytes, mapLimit, 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = path.resolve(HERE, '..')
 
-/** 长边取自 images.mjs 的规格：preview 2048 / medium 1280 / thumb 480 / blur 20 */
+/** 长边取自 images.mjs 的规格：large 3840 / preview 2048 / medium 1280 / thumb 480 / blur 20 */
 export const DEFAULT_COUNT = 300
 /** 固定种子：同一种子必然得到同一批图，压测数据可重复 */
 export const DEFAULT_SEED = 20261018
@@ -193,7 +193,7 @@ export async function runPlaceholders(options = {}) {
   const pruned = prunePlaceholderEntries(index)
   const ids = reserveIds(index, count)
 
-  log('占位图生成 · ' + count + ' 张 · 长边 ' + VARIANTS.preview.longEdge + '/' + VARIANTS.medium.longEdge + '/' + VARIANTS.thumb.longEdge + '/' + VARIANTS.blur.longEdge + ' · 种子 ' + seed)
+  log('占位图生成 · ' + count + ' 张 · 长边 ' + VARIANTS.large.longEdge + '/' + VARIANTS.preview.longEdge + '/' + VARIANTS.medium.longEdge + '/' + VARIANTS.thumb.longEdge + '/' + VARIANTS.blur.longEdge + ' · 种子 ' + seed)
   log('  时间轴：' + timeAt(0) + ' → ' + timeAt(count - 1) + '（每张 +' + TIME_STEP_MINUTES + ' 分钟）')
   log('  纵横比：' + RATIOS.map((r) => r.label).join(' ') + '（固定种子伪随机洗牌后轮换）')
   log('  ID 区间：' + ids[0] + ' … ' + ids[ids.length - 1] + (pruned.removed.length > 0 ? '（清理旧占位记录 ' + pruned.removed.length + ' 条）' : ''))
@@ -203,27 +203,37 @@ export async function runPlaceholders(options = {}) {
 
   let done = 0
   const results = await mapLimit(jobs, 4, async (job) => {
+    // photos.json 的 width/height 必须是 preview 的实际像素（与真实照片管线一致）
     const size = previewSize(job.ratio)
+    // 母版按最大的那一档（large 3840）渲染一次，五档全部从它向下缩 —— 与真实照片"从原图缩"同构，
+    // 也保证没有任何一档是被放大的
+    const masterSize = previewSize(job.ratio, VARIANTS.large.longEdge)
     const a = PALETTE[Math.floor(random() * PALETTE.length)]
     let b = PALETTE[Math.floor(random() * PALETTE.length)]
     if (b === a) b = PALETTE[(PALETTE.indexOf(a) + 2) % PALETTE.length]
 
     const svg = Buffer.from(
-      buildSvg({ id: job.id, time: job.time, ratio: job.ratio, width: size.width, height: size.height, colorA: a, colorB: b })
+      buildSvg({ id: job.id, time: job.time, ratio: job.ratio, width: masterSize.width, height: masterSize.height, colorA: a, colorB: b })
     )
-    // 中间母版：按 preview 实际像素渲染一次，再向下缩出 medium / thumb / blur
     const master = await sharp(svg).png().toBuffer()
 
+    const largeFile = variantPath(outRoot, 'large', job.id)
     const previewFile = variantPath(outRoot, 'preview', job.id)
     const mediumFile = variantPath(outRoot, 'medium', job.id)
     const thumbFile = variantPath(outRoot, 'thumb', job.id)
     const blurFile = variantPath(outRoot, 'blur', job.id)
+    ensureDirFor(largeFile)
     ensureDirFor(previewFile)
     ensureDirFor(mediumFile)
     ensureDirFor(thumbFile)
     ensureDirFor(blurFile)
 
-    await sharp(master).webp({ quality: VARIANTS.preview.quality, effort: 4 }).toFile(previewFile)
+    // 母版就是 large（长边 3840），不再放大也不再多解一次 SVG
+    await sharp(master).webp({ quality: VARIANTS.large.quality, effort: 4 }).toFile(largeFile)
+    await sharp(master)
+      .resize({ width: VARIANTS.preview.longEdge, height: VARIANTS.preview.longEdge, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: VARIANTS.preview.quality, effort: 4 })
+      .toFile(previewFile)
     await sharp(master)
       .resize({ width: VARIANTS.medium.longEdge, height: VARIANTS.medium.longEdge, fit: 'inside', withoutEnlargement: true })
       .webp({ quality: VARIANTS.medium.quality, effort: 4 })
@@ -255,11 +265,13 @@ export async function runPlaceholders(options = {}) {
 
   let thumbBytes = 0
   let mediumBytes = 0
+  let largeBytes = 0
   let previewBytes = 0
   let blurBytes = 0
   for (const photo of records) {
     thumbBytes += await fileBytes(variantPath(outRoot, 'thumb', photo.id))
     mediumBytes += await fileBytes(variantPath(outRoot, 'medium', photo.id))
+    largeBytes += await fileBytes(variantPath(outRoot, 'large', photo.id))
     previewBytes += await fileBytes(variantPath(outRoot, 'preview', photo.id))
     blurBytes += await fileBytes(variantPath(outRoot, 'blur', photo.id))
   }
@@ -274,7 +286,13 @@ export async function runPlaceholders(options = {}) {
   const avgOf = (sum, name) => name + ' 平均 ' + humanBytes(Math.round(sum / n)) + '（合计 ' + humanBytes(sum) + '）'
   log(
     '  产物体积：' +
-      [avgOf(thumbBytes, 'thumb'), avgOf(mediumBytes, 'medium'), avgOf(previewBytes, 'preview'), avgOf(blurBytes, 'blur')].join(' · ')
+      [
+        avgOf(thumbBytes, 'thumb'),
+        avgOf(mediumBytes, 'medium'),
+        avgOf(largeBytes, 'large'),
+        avgOf(previewBytes, 'preview'),
+        avgOf(blurBytes, 'blur')
+      ].join(' · ')
   )
   log('  时间范围：' + records[0].time + ' → ' + records[records.length - 1].time)
   log('')
@@ -284,7 +302,7 @@ export async function runPlaceholders(options = {}) {
     count: records.length,
     seed,
     ids: { first: records[0].id, last: records[records.length - 1].id },
-    bytes: { thumb: thumbBytes, medium: mediumBytes, preview: previewBytes, blur: blurBytes },
+    bytes: { thumb: thumbBytes, medium: mediumBytes, large: largeBytes, preview: previewBytes, blur: blurBytes },
     ratioCount
   }
 }

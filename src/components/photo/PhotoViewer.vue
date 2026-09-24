@@ -18,6 +18,7 @@ import 'photoswipe/dist/photoswipe.css'
 import { usePhotoViewer } from '@/composables/usePhotoViewer'
 import { SCENE_LABELS } from '@/data/taxonomy'
 import type { Photo } from '@/types/photo'
+import { buildViewerSrcset } from './viewer-sources'
 
 const { isOpen, photos, index, current, close } = usePhotoViewer()
 
@@ -64,9 +65,14 @@ function buildAlt(photo: Photo): string {
   return parts.length > 0 ? parts.join(' ') : `照片 ${photo.id}`
 }
 
-/** 大图用 preview（2048px），宽高取 preview 的真实像素；msrc 是 20px 的 blur 占位 */
+/**
+ * 大图默认用 preview（2048px），宽高取 preview 的真实像素；msrc 是 20px 的 blur 占位。
+ *
+ * srcset 交给浏览器挑（Phase 2 · Ultra HD）：只有高 DPI 大屏才会真正去取 3840 的 large，
+ * 手机与普通屏仍然只下 2048。选档规则见 viewer-sources.ts，sizes 由 PhotoSwipe 自己算。
+ */
 function toSlideData(photo: Photo): SlideData {
-  return {
+  const data: SlideData = {
     src: photo.src,
     width: photo.width,
     height: photo.height,
@@ -76,6 +82,9 @@ function toSlideData(photo: Photo): SlideData {
     id: photo.id,
     color: photo.color
   }
+  const srcset = buildViewerSrcset(photo)
+  if (srcset) data.srcset = srcset
+  return data
 }
 
 /** 单张幻灯片的底色：photo.color，避免加载前露出近黑的空洞 */

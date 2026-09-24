@@ -28,11 +28,27 @@ export interface PhotoTech {
   thumb: string
   /** 长边 1280px WebP —— 桌面端中等尺寸展示（画册版面、Story 错落图、瞬间页）；小图不放大 */
   medium: string
+  /**
+   * 长边 3840px WebP —— 高 DPI 屏幕 / 放大查看
+   * （由全屏查看器按设备条件选用，列表与画册版面一律不加载；原图小于 3840px 时保持原尺寸，不放大）
+   */
+  /**
+   * 长边 3840px WebP —— 仅高 DPI / 放大查看时由查看器按需取用，列表与画册都不加载。
+   * 与其它档同一条规则：原图小于 3840 时不放大（withoutEnlargement）。
+   */
+  large: string
   /** 20px WebP 模糊占位 */
   blur: string
   /** preview 的实际像素，用于 aspect-ratio 占位 */
   width: number
   height: number
+  /**
+   * large 档的真实像素。可选：只有拿到了实测值才写。
+   * 用途只有一个 —— 查看器写 srcset 的宽度描述符（"3840w" 必须是真的 3840 宽，
+   * 否则小原图会被错误地宣称成大图，浏览器就会选错）。
+   */
+  largeWidth?: number
+  largeHeight?: number
   /** width / height，避免组件里重复计算 */
   ratio: number
   /** EXIF 拍摄时间（ISO 字符串），缺失为 null */

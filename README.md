@@ -139,7 +139,7 @@ src/data/photos.overrides.json
 | 平台 | 地址 | 可见性 |
 | --- | --- | --- |
 | **Cloudflare Workers**（主） | <https://marryphoto.3069508080.workers.dev> | ✅ **密码保护已生效**（见下） |
-| GitHub Pages（A 方案，备份） | <https://tingyu220.github.io/MarryPhoto/> | ⚠️ 公开 |
+| GitHub Pages（A 方案，备份） | <https://tingyu220.github.io/MarryPhoto/> | ⚠️ 公开 —— **2026-09-24 决定保留不动**（主人知情；代码仓库需要它作为公开备份） |
 
 ### 密码保护（当前生效中）
 

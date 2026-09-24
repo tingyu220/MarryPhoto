@@ -147,9 +147,12 @@ export function buildPhotoRecords(entries) {
     src: '/photos/preview/' + entry.id + '.webp',
     thumb: '/photos/thumb/' + entry.id + '.webp',
     medium: '/photos/medium/' + entry.id + '.webp',
+    large: '/photos/large/' + entry.id + '.webp',
     blur: '/photos/blur/' + entry.id + '.webp',
     width: entry.width,
     height: entry.height,
+    // 可选字段：只有拿到 large 实测像素时才写（查看器用它生成 srcset 的宽度描述符）
+    ...(entry.largeWidth ? { largeWidth: entry.largeWidth, largeHeight: entry.largeHeight } : {}),
     ratio: round4(entry.width / entry.height),
     time: entry.time ?? null,
     color: entry.color,
