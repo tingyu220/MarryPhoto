@@ -1,0 +1,18 @@
+{
+  // Cloudflare Workers 静态资源托管（B1 方案：Pages/Workers + Access 邮箱验证）
+  //
+  // 为什么不改任何构建配置：Workers 上站点在根路径 '/'，
+  // 而 vite.config.ts 的 base 默认就是 '/'（只有 GitHub Pages 才需要 /MarryPhoto/ 子路径）。
+  // 所以同一份 dist/ 两边都能用，切平台不需要改一行代码。
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "marryphoto",
+  "compatibility_date": "2026-09-01",
+
+  // 静态站点：dist/ 整体上传
+  "assets": {
+    "directory": "./dist",
+    // history 模式路由的 SPA 兜底：/gallery 这类路径没有对应文件时，
+    // 直接返回 index.html 交给前端路由解析（比 Pages 的 404.html 更干净）
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -134,9 +134,32 @@ src/data/photos.overrides.json
 
 ## 部署
 
-### 现在的方式：GitHub Pages（已上线）
+### 两套部署（同一份 dist/，不需要改代码）
 
-**线上地址：<https://tingyu220.github.io/MarryPhoto/>**
+| 平台 | 地址 | 可见性 |
+| --- | --- | --- |
+| **Cloudflare Workers**（B1 方案，主） | <https://marryphoto.3069508080.workers.dev> | 待加 Cloudflare Access 后为"验证后可见" |
+| GitHub Pages（A 方案，备份） | <https://tingyu220.github.io/MarryPhoto/> | ⚠️ 公开 |
+
+Cloudflare 的部署命令：
+
+~~~bash
+npm run deploy:cf          # = npm run build && wrangler deploy
+~~~
+
+注意：本机访问 `api.cloudflare.com` 需要走代理，否则会报 `fetch failed`：
+
+~~~powershell
+$env:HTTPS_PROXY='http://127.0.0.1:7897'   # Clash Verge 的本地端口
+npm run deploy:cf
+~~~
+
+同一个 `dist/` 两边都能用，因为只有 GitHub Pages 需要子路径 base（`/MarryPhoto/`），
+Cloudflare 上站点在根路径 `/`，而 `vite.config.ts` 的 base 默认就是 `/`。
+
+---
+
+### GitHub Pages 的配置细节
 
 推送到 `main` 就会自动构建并发布（`.github/workflows/deploy-pages.yml`）。
 流水线里跑了 `typecheck` 与 `render-check`，**检查不过就不会发布**。
