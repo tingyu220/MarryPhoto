@@ -97,6 +97,18 @@ onBeforeUnmount(() => {
       </RevealOnScroll>
     </section>
 
+    <!--
+      影像馆入口（任务书 §45~§47）。
+      位置刻意在"承诺"之后、精选之前：情绪顺序是 首页 → 影像馆 → 故事/照片/人物/瞬间 → 那封信。
+      视觉沿用站内的文字链接（不用大按钮、不用发光、不做科技感），只用一句更安静的小字交代它是什么。
+    -->
+    <section class="theatre">
+      <RevealOnScroll>
+        <p class="theatre__note t-caption">换个方式看这一天</p>
+        <RouterLink class="text-link theatre__link" to="/experience">进入影像馆 →</RouterLink>
+      </RevealOnScroll>
+    </section>
+
     <!-- 第三屏：精选横滑 -->
     <section v-if="stripPhotos.length" class="strip" aria-label="精选照片">
       <ul class="strip__list">
@@ -259,6 +271,23 @@ onBeforeUnmount(() => {
 .promise .text-link {
   display: inline-block;
   margin-top: var(--s-12);
+}
+
+/* ---------- 影像馆入口 ---------- */
+
+.theatre {
+  max-width: var(--w-page);
+  margin-inline: auto;
+  padding-block: var(--s-24) 0;
+  text-align: center;
+}
+
+.theatre__note {
+  margin-bottom: var(--s-4);
+}
+
+.theatre__link {
+  font-size: var(--t-body);
 }
 
 /* ---------- 精选横滑 ---------- */

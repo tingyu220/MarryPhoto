@@ -23,6 +23,10 @@
       "to": "/story"
     },
     {
+      "label": "影像馆",
+      "to": "/experience"
+    },
+    {
       "label": "全部照片",
       "to": "/gallery"
     },
