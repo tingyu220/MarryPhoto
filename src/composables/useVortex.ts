@@ -187,6 +187,20 @@ export interface VortexPreset extends VortexGeometry {
   antialias: boolean
   /** 贴图开始加载的时间错开（毫秒/张）：避免十几张 1280px 同时解码 */
   textureStagger: number
+  /** Phase 4 §32：照片堆的位置与散布（堆在画面中下部） */
+  stack: VortexStackShape
+  /** Phase 4/5 §31~§39：时间轴常量（秒） */
+  timing: VortexTiming
+  /** Phase 5 §38：聚焦时沿"背离中心轴"方向推出去的距离（世界单位） */
+  focusPush: number
+  /** Phase 5 §38：聚焦时的额外缩放（在 hoverScale 之上再乘一层，仍然是"轻微"） */
+  focusScale: number
+  /** Phase 5 §38：聚焦时其它照片变暗到的亮度系数（1 = 不变暗） */
+  focusDim: number
+  /** Phase 5 §38：聚焦时自转减速到的倍率（0.3 = 三成速度，但依然在转） */
+  focusSpin: number
+  /** Phase 5 §38：点击到查看器打开之间的延迟（秒）：留给"照片靠近相机"那段过渡 */
+  focusLead: number
 }
 
 /**
@@ -219,7 +233,18 @@ export const VORTEX_PRESETS: { readonly desktop: VortexPreset; readonly mobile: 
     lookAtHeight: 0.1,
     maxDpr: 2,
     antialias: true,
-    textureStagger: 70
+    textureStagger: 70,
+    // 照片堆在画面中下部：相机看向 y = lookAtHeight(0.1)，可见半高 ≈ 4.5，
+    // 所以 -2.9 大约落在视口 66% 的位置，堆的下沿仍在画面里。
+    stack: { centerY: -2.9, spreadX: 0.62, spreadY: 0.3, spreadZ: 0.5, tilt: 0.13 },
+    // 整条时间轴：0.5 渐显 + 17 × 0.045 错开 + 0.85 单张升空 ≈ 2.1 秒全部到位。
+    // 刻意做短（§33）：照片一出现就能点，用户不必等动画放完。
+    timing: { intro: 0.5, stagger: 0.045, lift: 0.85, introMaxWait: 1.6, focusHold: 1.4 },
+    focusPush: 0.42,
+    focusScale: 1.08,
+    focusDim: 0.65,
+    focusSpin: 0.3,
+    focusLead: 0.3
   },
   mobile: {
     count: 12,
@@ -243,7 +268,15 @@ export const VORTEX_PRESETS: { readonly desktop: VortexPreset; readonly mobile: 
     lookAtHeight: 0.1,
     maxDpr: 1.5,
     antialias: false,
-    textureStagger: 90
+    textureStagger: 90,
+    // 手机档：视野更窄（fov 45 / 距离 10），堆再低一点、摊得再小一点
+    stack: { centerY: -3.1, spreadX: 0.5, spreadY: 0.24, spreadZ: 0.4, tilt: 0.12 },
+    timing: { intro: 0.45, stagger: 0.05, lift: 0.8, introMaxWait: 1.6, focusHold: 1.3 },
+    focusPush: 0.34,
+    focusScale: 1.07,
+    focusDim: 0.7,
+    focusSpin: 0.3,
+    focusLead: 0.3
   }
 }
 
@@ -428,6 +461,19 @@ export interface VortexSceneContext {
   readonly unitPlane: ShallowRef<BufferGeometry | null>
   /** 相纸（白边）材质，共享 */
   readonly paperMaterial: ShallowRef<Material | null>
+  /**
+   * 照片下方那层极淡的柔光投影材质，全场景共享一份（含那张 128px 的径向渐变贴图）。
+   * 由 VortexScene 创建与释放，子组件只借用，**不要 dispose**。
+   */
+  readonly shadowMaterial: ShallowRef<Material | null>
+  /** 背面用的更淡的投影材质（同一张贴图，只差 opacity）—— 避免后景被一片暗色糊住 */
+  readonly shadowMaterialFar: ShallowRef<Material | null>
+  /**
+   * 影子的容器：挂在 yawGroup 上（**不跟着自转**）。
+   * 每张照片的影子由逐帧循环投射到这个容器里，位置 = 照片位置沿光方向投到背后的幕上，
+   * 于是空间一转，影子会跟着扫动 —— 这才是「旋转中的照片的投影」。
+   */
+  readonly shadowGroup: ShallowRef<Group | null>
   /** 螺旋本身 —— 自动旋转转的就是它 */
   readonly spiral: ShallowRef<Group | null>
   /** 中心环挂的分组（跟着整个空间一起被拖拽） */
@@ -517,4 +563,170 @@ export function useVortex(): VortexState {
   )
 
   return { photos, points, mode, innerRadius, preset, reducedMotion, webgl }
+}
+
+/* ==================== 8. Phase 4/5：姿态 · 时间轴 · 状态机（纯函数） ==================== */
+
+/**
+ * 一张相纸的姿态（世界坐标 + 欧拉角）。
+ *
+ * Phase 4 的全部数据就落在这三个对象上，每张照片各有自己的三个：
+ *   · stack —— 它在照片堆里的姿态（§32，由 id 派生的稳定随机，**只在建场景时算一次**）；
+ *   · home  —— 它在螺旋上的姿态（Phase 3 那套位置与倾斜，一个数都没改）；
+ *   · pose  —— 逐帧插值的落点（预分配，帧循环就地改写）。
+ * 于是"每张照片各自的 start / target / progress"（§34）与"逐帧零分配"（红线 §51）同时成立。
+ */
+export interface VortexPose {
+  x: number
+  y: number
+  z: number
+  rotationX: number
+  rotationY: number
+  rotationZ: number
+}
+
+/** 照片堆的形状：中心高度 + 三个方向上的散布半宽 + 最大倾角 */
+export interface VortexStackShape {
+  /** 堆中心的世界高度（画面中下部：相机看向 lookAtHeight，负值就是"偏下"） */
+  centerY: number
+  spreadX: number
+  spreadY: number
+  spreadZ: number
+  /** 堆里相纸的最大倾角（弧度）—— 看起来是"随手叠上去的"，不是码齐的 */
+  tilt: number
+}
+
+/** 时间轴常量（秒）。整个 intro 必须短：用户不该等一堆动画放完（§33）。 */
+export interface VortexTiming {
+  /** 渐显时长：中心文字 + 照片堆 */
+  intro: number
+  /** 相邻两张的出场间隔（逐张错开，§34） */
+  stagger: number
+  /** 单张从堆里升到螺旋位的时长 */
+  lift: number
+  /** idle 最多等多久（秒）：第一张贴图到位就开始，网络卡住也不会一直黑着 */
+  introMaxWait: number
+  /** 聚焦保持多久后自动回位（秒）：这时全屏查看器已经盖住画面 */
+  focusHold: number
+}
+
+/**
+ * Phase 4 §31 的状态机。
+ *
+ * 只有六个状态，每一个都真的被用到：
+ *   idle      一张都还没显现（在等第一张贴图）
+ *   intro     中心文字 + 照片堆渐显
+ *   lifting   逐张抽离升空 —— **这一阶段照片依然可以 hover / 点击**（§35）
+ *   orbiting  全部到位，极慢自转
+ *   focusing  点击之后：当前照片靠近相机，其它照片变暗、自转减速（§38）
+ *   returning 回位，然后回到 orbiting（§39）
+ *
+ * 刻意**没有** viewer 状态：查看器是全站唯一实例，这一页不监听它的开合
+ * （Phase 3 就定下的规矩，39 检查里有断言）。状态机只服务于真正发生的事，
+ * 不为状态机而状态机。
+ */
+export const VORTEX_PHASES = ['idle', 'intro', 'lifting', 'orbiting', 'focusing', 'returning'] as const
+export type VortexPhase = (typeof VORTEX_PHASES)[number]
+
+/** 状态机的事件：三个交互事件（由指针 / 计时器触发） */
+export type VortexPhaseEvent = 'select' | 'hold-elapsed' | 'returned'
+
+/**
+ * 状态迁移（纯函数，可以在没有 WebGL 的 Node 里穷举断言）。
+ *
+ * - select：**只要照片已经出现在画面里就能点**（§35）。idle 是唯一例外 —— 那时一张都还没显现；
+ * - hold-elapsed / returned：聚焦与回位各自只由自己的计时器推动；
+ * - 任何事件都不会把状态往回拨：迁移图里不存在 A→B 与 B→A 同时成立的一对（不会来回抖）。
+ */
+export function nextPhaseOnEvent(phase: VortexPhase, event: VortexPhaseEvent): VortexPhase {
+  if (event === 'select') return phase === 'idle' ? phase : 'focusing'
+  if (event === 'hold-elapsed') return phase === 'focusing' ? 'returning' : phase
+  if (event === 'returned') return phase === 'returning' ? 'orbiting' : phase
+  return phase
+}
+
+/** 由时钟推进的自动相位：intro → lifting → orbiting（单向，永不回头） */
+export function phaseAt(elapsed: number, count: number, timing: VortexTiming): VortexPhase {
+  if (!(elapsed > timing.intro)) return 'intro'
+  return elapsed < liftEndAt(count, timing) ? 'lifting' : 'orbiting'
+}
+
+/** 最后一张到位的时刻（秒，从 intro 开始计时） */
+export function liftEndAt(count: number, timing: VortexTiming): number {
+  const safeCount = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0
+  return timing.intro + Math.max(0, safeCount - 1) * timing.stagger + timing.lift
+}
+
+/** 渐显进度：intro 之内 0 → 1，之后恒为 1（照片堆与投影一起淡入） */
+export function revealAt(elapsed: number, timing: VortexTiming): number {
+  if (!(elapsed > 0)) return 0
+  const t = elapsed / timing.intro
+  return t >= 1 ? 1 : easeOutCubic(t)
+}
+
+/**
+ * 第 index 张的抽离进度：0 = 还在堆里，1 = 已经到位。
+ * 对时间单调不减、逐张错开、与帧率无关 —— 掉帧不会让照片走两次。
+ */
+export function liftProgressAt(elapsed: number, index: number, timing: VortexTiming): number {
+  const start = timing.intro + index * timing.stagger
+  if (!(elapsed > start)) return 0
+  const t = (elapsed - start) / timing.lift
+  return t >= 1 ? 1 : easeInOutCubic(t)
+}
+
+/**
+ * 由照片 id 派生"随手叠上去"的姿态。
+ *
+ * **只在初始化时调用一次**（VortexPhoto 挂载时）：逐帧重算会让照片在堆里抖（§32）。
+ * 同一个 id 永远得到同一组随机数，所以反复进出 /experience 时照片堆长得一模一样。
+ */
+export function stackPoseOf(id: string, shape: VortexStackShape): VortexPose {
+  const seed = hashSeed(id)
+  // 盐从 10 起：与 VortexPhoto 里 0/1/2 号的螺旋倾斜种子互不相关
+  const unit = (salt: number): number => seedUnit(seed, salt)
+  return {
+    x: (unit(10) - 0.5) * 2 * shape.spreadX,
+    y: shape.centerY + (unit(11) - 0.5) * 2 * shape.spreadY,
+    z: (unit(12) - 0.5) * 2 * shape.spreadZ,
+    rotationX: (unit(13) - 0.5) * 2 * shape.tilt,
+    rotationY: (unit(14) - 0.5) * 2 * shape.tilt,
+    rotationZ: (unit(15) - 0.5) * 2 * shape.tilt
+  }
+}
+
+/** 两个角度之间的最短路径（∈ [-π, π]）：照片从堆里飞出去时不必多转一整圈 */
+export function shortestAngleDelta(from: number, to: number): number {
+  const twoPi = Math.PI * 2
+  let delta = (to - from) % twoPi
+  if (delta > Math.PI) delta -= twoPi
+  else if (delta < -Math.PI) delta += twoPi
+  return delta
+}
+
+/**
+ * 姿态插值：out = from + (to − from) × t。
+ *
+ * **结果写进调用方传进来的 out**，所以逐帧调用不产生任何新对象（红线 §51）。
+ * 每个分量都是 t 的单调函数，t = 0 / 1 精确落在 from / to 上（rotationY 走最短路径，
+ * 因此与目标角度最多相差整数圈，视觉上完全相同）。
+ */
+export function lerpPose(out: VortexPose, from: VortexPose, to: VortexPose, t: number): VortexPose {
+  const k = t < 0 ? 0 : t > 1 ? 1 : t
+  out.x = from.x + (to.x - from.x) * k
+  out.y = from.y + (to.y - from.y) * k
+  out.z = from.z + (to.z - from.z) * k
+  out.rotationX = from.rotationX + (to.rotationX - from.rotationX) * k
+  out.rotationY = from.rotationY + shortestAngleDelta(from.rotationY, to.rotationY) * k
+  out.rotationZ = from.rotationZ + (to.rotationZ - from.rotationZ) * k
+  return out
+}
+
+function easeOutCubic(t: number): number {
+  const k = 1 - t
+  return 1 - k * k * k
+}
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
