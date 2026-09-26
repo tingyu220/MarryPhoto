@@ -28,6 +28,29 @@ const round = (n) => Number(n.toFixed(4))
 
 export default async function ({ check, load, makePhotos, ROOT }) {
   const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8')
+
+  /* ───────────────────────── 0. 重播开场（用户点过一次"没反应"） ─────────────────────────
+   * 两个根因都写死在这里，防止以后又被改回去：
+   *   ① 提示语整行 pointer-events: none（为了不挡画布），把按钮的点击一起吞了；
+   *   ② 重播时把时钟退回 -1（"还没开始"），而贴图早已加载完不会再触发 introArmed，
+   *      于是要静默等满 introMaxWait(1.6s) 才开始 —— 用户只会以为按钮坏了。
+   */
+  const memorySrc = read(DIR + '/MemoryVortex.vue')
+  const sceneSrc = read(DIR + '/VortexScene.vue')
+
+  check('提示语整行是 pointer-events: none（不挡画布拖拽）',
+    /vortex__hint[\s\S]{0,400}pointer-events:\s*none/.test(memorySrc))
+  check('重播按钮把指针事件要回来了 —— 否则看上去在、点下去毫无反应',
+    /vortex__replay[\s\S]{0,240}pointer-events:\s*auto/.test(memorySrc))
+  check('重播是真的 button 且有可见文案',
+    /<button[^>]*class="vortex__replay"[^>]*>[\s\S]{0,40}重播开场/.test(memorySrc))
+  check('replayKey 真传给了 VortexScene',
+    /:replay-key="replayKey"/.test(memorySrc) && /replayKey\?:\s*number/.test(sceneSrc))
+  check('重播是立刻开始：时钟置 0，而不是退回"等待贴图"',
+    /introClock = 0[\s\S]{0,240}idleTime = 0[\s\S]{0,240}phase = 'intro'/.test(sceneSrc) &&
+    !/introClock = -1[\s\S]{0,140}idleTime = 0[\s\S]{0,140}phase = 'idle'/.test(sceneSrc))
+  check('重播只重置时间轴，不重载相机与渲染器',
+    !/replayKey[\s\S]{0,500}(camera\.position|renderer\.dispose|forceContextLoss)/.test(sceneSrc))
   const V = load('src/composables/useVortex.ts')
   const sceneSource = read(DIR + '/VortexScene.vue')
   const photoSource = read(DIR + '/VortexPhoto.vue')

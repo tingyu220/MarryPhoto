@@ -738,10 +738,16 @@ watch(
   () => props.replayKey,
   () => {
     if (disposed) return
-    introClock = -1
+    /*
+     * 立刻从 0 开始，**不能**退回 -1。
+     * -1 表示"还没开始"，那要等 introArmed（贴图已加载完就不会再触发）或 idleTime 攒够
+     * introMaxWait（1.6s）才启动 —— 用户点完按钮盯着屏幕 1.6 秒没动静，
+     * 只会得出"点了没反应"的结论。
+     */
+    introClock = 0
     idleTime = 0
     introArmed = false
-    phase = 'idle'
+    phase = 'intro'
   }
 )
 

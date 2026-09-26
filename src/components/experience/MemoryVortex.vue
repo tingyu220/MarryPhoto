@@ -360,7 +360,13 @@ function onSceneFail(): void {
 }
 
 /* 底部一行操作提示：唯一一处"告诉用户怎么用"的文字，没有 HUD、没有图标 */
+/*
+ * 整行提示语是 pointer-events: none（为了不挡住画布的拖拽），
+ * 所以按钮必须自己把指针事件要回来 —— 否则它看上去在，点下去毫无反应。
+ */
 .vortex__replay {
+  pointer-events: auto;
+  cursor: pointer;
   margin-left: var(--s-4);
   font: inherit;
   color: inherit;
