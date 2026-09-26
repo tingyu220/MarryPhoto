@@ -1,4 +1,16 @@
 /**
+ * ⚠️ 当前**未启用**（2026-09-24 起）。
+ * 用户明确说"身份验证暂时不用，后续应该也不用"，所以 wrangler.jsonc 里已经不再挂 `main`，
+ * 请求直接走静态资源。这个文件保留下来是为了将来想恢复时不用重写（也方便回看当时怎么做的）。
+ *
+ * 要恢复密码保护，需要三步：
+ *   1. 本目录的 assets 上加回 `"binding": "ASSETS"` 与 `"run_worker_first": true`（后者不能少，
+ *      否则静态资源命中就直接返回、根本不进 Worker，鉴权会被静默绕过）；
+ *   2. wrangler.jsonc 里加回 `"main": "worker/index.js"`；
+ *   3. `'密码' | npx wrangler secret put SITE_PASSWORD` 然后重新 deploy。
+ *
+ * —— 以下是原本的说明 ——
+ *
  * 密码保护（B2 方案）
  *
  * 为什么先用它，而不是 Cloudflare Access：

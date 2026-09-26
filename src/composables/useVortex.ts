@@ -223,7 +223,9 @@ export const VORTEX_PRESETS: { readonly desktop: VortexPreset; readonly mobile: 
     hoverScale: 1.05,
     // 0.04 弧度/秒 ≈ 一圈 157 秒。极慢，是这一页最重要的一个数字。
     spin: 0.04,
-    maxYaw: 0.5,
+    // 拖拽的水平范围：π = 可以一路拖到背面看全一圈
+  // （初版是 0.5 rad ≈ 29°，用户反馈"转不到后面的照片"）
+  maxYaw: Math.PI,
     maxPitch: 0.18,
     allowPitch: true,
     cameraDistance: 13,
@@ -239,7 +241,9 @@ export const VORTEX_PRESETS: { readonly desktop: VortexPreset; readonly mobile: 
     stack: { centerY: -2.9, spreadX: 0.62, spreadY: 0.3, spreadZ: 0.5, tilt: 0.13 },
     // 整条时间轴：0.5 渐显 + 17 × 0.045 错开 + 0.85 单张升空 ≈ 2.1 秒全部到位。
     // 刻意做短（§33）：照片一出现就能点，用户不必等动画放完。
-    timing: { intro: 0.5, stagger: 0.045, lift: 0.85, introMaxWait: 1.6, focusHold: 1.4 },
+    // 开场总时长 ≈ intro + (n-1)·stagger + lift ≈ 0.7 + 17×0.06 + 1.25 ≈ 2.97s
+  // （初版 2.1s，用户反馈"没看到螺旋上升" —— 放慢并加长，同时提供重播入口）
+  timing: { intro: 0.7, stagger: 0.06, lift: 1.25, introMaxWait: 1.6, focusHold: 1.4 },
     focusPush: 0.42,
     focusScale: 1.08,
     focusDim: 0.65,
@@ -258,7 +262,7 @@ export const VORTEX_PRESETS: { readonly desktop: VortexPreset; readonly mobile: 
     tilt: 0.03,
     hoverScale: 1.04,
     spin: 0.032,
-    maxYaw: 0.4,
+    maxYaw: Math.PI,
     maxPitch: 0,
     allowPitch: false,
     cameraDistance: 10,
@@ -271,7 +275,7 @@ export const VORTEX_PRESETS: { readonly desktop: VortexPreset; readonly mobile: 
     textureStagger: 90,
     // 手机档：视野更窄（fov 45 / 距离 10），堆再低一点、摊得再小一点
     stack: { centerY: -3.1, spreadX: 0.5, spreadY: 0.24, spreadZ: 0.4, tilt: 0.12 },
-    timing: { intro: 0.45, stagger: 0.05, lift: 0.8, introMaxWait: 1.6, focusHold: 1.3 },
+    timing: { intro: 0.6, stagger: 0.055, lift: 1.15, introMaxWait: 1.6, focusHold: 1.3 },
     focusPush: 0.34,
     focusScale: 1.07,
     focusDim: 0.7,

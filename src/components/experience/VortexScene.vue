@@ -22,7 +22,7 @@
  *   onUnmounted：最后释放共享的平面几何、相纸材质，renderer.dispose() + 强制丢弃上下文。
  *   顺序不能反：共享资源必须在子组件全部交还引用之后再释放。
  */
-import { onBeforeUnmount, onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { onBeforeUnmount, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import type {
   BufferGeometry,
   Group,
@@ -57,6 +57,11 @@ const props = defineProps<{
   photos: Photo[]
   points: VortexPoint[]
   preset: VortexPreset
+  /**
+   * 递增这个值 = 把开场时间轴倒回开头（照片重新回到堆里、再飞一次）。
+   * 开场只有几秒，很容易在看别处的时候错过，所以给一个可以重播的入口。
+   */
+  replayKey?: number
 }>()
 
 const emit = defineEmits<{
@@ -182,6 +187,8 @@ const DRAG_SENSITIVITY = 0.004
 /** 空间底视差的换算（像素/弧度）。拖到边界时背景约移 20px —— 能感觉到纵深，不会晕 */
 const PARALLAX_X = 40
 const PARALLAX_Y = 50
+/** 视差只在 ±0.6 rad 内跟着走，超过就顶住 */
+const PARALLAX_MAX_YAW = 0.6
 
 /*
  * 投影的「幕」与光方向（世界单位）。
@@ -568,7 +575,10 @@ function build(THREE: ThreeModule): void {
 
     // 3) 空间底视差：整个空间被拖拽时，背景反向轻微位移（幅度很小，只为纵深）
     //    只在变化超过半像素时才写 DOM —— 静止时一帧都不写
-    const px = -viewYaw * PARALLAX_X
+    // 视差只看"小角度"的那一段：yaw 现在可以拖到 180°，
+    // 直接乘上去背景会飞出屏幕，画面会变成"两层各转各的"
+    const parallaxYaw = viewYaw > PARALLAX_MAX_YAW ? PARALLAX_MAX_YAW : viewYaw < -PARALLAX_MAX_YAW ? -PARALLAX_MAX_YAW : viewYaw
+    const px = -parallaxYaw * PARALLAX_X
     const py = viewPitch * PARALLAX_Y
     if (px - lastParallaxX > 0.5 || lastParallaxX - px > 0.5 || py - lastParallaxY > 0.5 || lastParallaxY - py > 0.5) {
       lastParallaxX = px
@@ -719,6 +729,21 @@ function detach(): void {
     document.removeEventListener('visibilitychange', onVisibilityChange)
   }
 }
+
+/*
+ * 重播：把时间轴倒回开头。
+ * 只重置时间轴与相位 —— 相机、拖拽角度、贴图都不动，所以重播是"再飞一次"而不是"重载整页"。
+ */
+watch(
+  () => props.replayKey,
+  () => {
+    if (disposed) return
+    introClock = -1
+    idleTime = 0
+    introArmed = false
+    phase = 'idle'
+  }
+)
 
 onMounted(async () => {
   try {

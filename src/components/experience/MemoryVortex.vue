@@ -87,6 +87,13 @@ function onSceneReady(): void {
   frames.value = 1
 }
 
+/** 递增这个 key 就会让 VortexScene 把时间轴倒回开头（照片重新回到堆里再飞一次） */
+const replayKey = ref(0)
+
+function replay(): void {
+  replayKey.value += 1
+}
+
 function onSceneProgress(loaded: number, settled: number): void {
   loadedTextures.value = loaded
   settledTextures.value = settled
@@ -121,6 +128,7 @@ function onSceneFail(): void {
       :photos="photos"
       :points="points"
       :preset="preset"
+      :replay-key="replayKey"
       @select="openFrom3D"
       @ready="onSceneReady"
       @progress="onSceneProgress"
@@ -145,7 +153,16 @@ function onSceneFail(): void {
 
     <p v-if="showLoading" class="vortex__loading t-caption">正在打开这一天…</p>
 
-    <p class="vortex__hint t-caption">{{ hint }}</p>
+    <p class="vortex__hint t-caption">
+      {{ hint }}
+      <!--
+        重播开场：开场只有几秒，很容易在看别处的时候错过（用户就错过了一次）。
+        与其让他反复刷新，不如给一个安静的入口。只在 3D 模式下出现。
+      -->
+      <button v-if="mode === 'scene'" type="button" class="vortex__replay" @click="replay()">
+        重播开场
+      </button>
+    </p>
 
     <!--
       键盘与读屏的入口：3D 画布本身对它们是不可见的，所以这里保留一份真实按钮列表，
@@ -343,6 +360,19 @@ function onSceneFail(): void {
 }
 
 /* 底部一行操作提示：唯一一处"告诉用户怎么用"的文字，没有 HUD、没有图标 */
+.vortex__replay {
+  margin-left: var(--s-4);
+  font: inherit;
+  color: inherit;
+  border-bottom: 1px solid currentColor;
+  opacity: 0.7;
+  transition: opacity var(--d-fast) var(--e-out);
+}
+
+.vortex__replay:hover {
+  opacity: 1;
+}
+
 .vortex__hint {
   position: absolute;
   inset-inline: 0;

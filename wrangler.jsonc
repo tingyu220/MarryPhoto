@@ -1,25 +1,21 @@
 {
-  // Cloudflare Workers 静态资源托管 + 密码保护
+  // Cloudflare Workers 静态资源托管（纯静态，无鉴权）
+  //
+  // 2026-09-24：**已移除密码保护**。用户说"暂时不用，后续应该也不用验证"。
+  // 之前那版是 `main: worker/index.js` + `run_worker_first: true` 做 Basic Auth，
+  // 现在配置里不再挂 main —— 请求直接走静态资源，不再经过任何 Worker。
+  // worker/index.js 保留在仓库里没删（想恢复时改回来即可，见文件头注释）。
   //
   // 为什么不改构建配置：Workers 上站点在根路径 '/'，
   // 而 vite.config.ts 的 base 默认就是 '/'（只有 GitHub Pages 才需要 /MarryPhoto/ 子路径）。
-  // 同一份 dist/ 两边通用。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "marryphoto",
   "compatibility_date": "2026-09-01",
 
-  // 主脚本先跑，鉴权通过后再交给静态资源
-  "main": "worker/index.js",
-
   "assets": {
     "directory": "./dist",
-    "binding": "ASSETS",
     // history 模式路由的 SPA 兜底：/gallery 这类路径没有对应文件时直接返回 index.html
-    "not_found_handling": "single-page-application",
-    // 关键：默认情况下静态资源命中就直接返回、**根本不进 Worker**，
-    // 于是密码校验会被绕过（实测：不带密码也能 200）。
-    // run_worker_first = true 让所有请求先过 Worker，鉴权之后才交给 ASSETS。
-    "run_worker_first": true
+    "not_found_handling": "single-page-application"
   },
 
   "observability": { "enabled": true }

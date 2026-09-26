@@ -268,10 +268,16 @@ export default async function ({ check, render, load, makePhotos, ROOT }) {
     '桌面 ' + desktop.hoverScale + ' / 手机 ' + mobile.hoverScale)
   check('相机没有自由飞行：源码里没有键盘监听',
     !/keydown|keyup|KeyW|KeyA|KeyS|KeyD/.test(sceneSource))
+  /*
+   * yaw 上限从 0.6 放到 π：用户反馈"转不到后面的照片"，所以水平方向现在允许拖满一圈。
+   * 仍然必须是**钳制过**的（不能无限转），pitch 仍然很小（不给自由飞行）。
+   */
   check('拖拽与滚轮都有边界（yaw / pitch / 距离都是钳制过的）',
-    desktop.maxYaw <= 0.6 && desktop.maxPitch <= 0.3 && mobile.maxPitch === 0 &&
+    desktop.maxYaw > 0.6 && desktop.maxYaw <= Math.PI + 1e-6 &&
+      desktop.maxPitch <= 0.3 && mobile.maxPitch === 0 &&
       desktop.minDistance < desktop.cameraDistance && desktop.cameraDistance < desktop.maxDistance,
-    'yaw±' + desktop.maxYaw + ' pitch±' + desktop.maxPitch)
+    'yaw±' + desktop.maxYaw.toFixed(2) + ' pitch±' + desktop.maxPitch)
+  check('水平方向能拖满一圈（够得着背面的照片）', desktop.maxYaw >= Math.PI - 1e-6)
   check('没有任何实时阴影（没有 shadowMap / castShadow / 灯光）',
     !/shadowMap|castShadow|receiveShadow|DirectionalLight|AmbientLight|PointLight/.test(experienceSource))
 

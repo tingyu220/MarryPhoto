@@ -138,26 +138,20 @@ src/data/photos.overrides.json
 
 | 平台 | 地址 | 可见性 |
 | --- | --- | --- |
-| **Cloudflare Workers**（主） | <https://marryphoto.3069508080.workers.dev> | ✅ **密码保护已生效**（见下） |
-| GitHub Pages（A 方案，备份） | <https://tingyu220.github.io/MarryPhoto/> | ⚠️ 公开 —— **2026-09-24 决定保留不动**（主人知情；代码仓库需要它作为公开备份） |
+| **Cloudflare Workers**（主） | <https://marryphoto.3069508080.workers.dev> | 公开（**2026-09-24 起不再做身份验证**） |
+| GitHub Pages（A 方案，备份） | <https://tingyu220.github.io/MarryPhoto/> | 公开 —— **2026-09-24 决定保留不动**（主人知情；代码仓库需要它作为公开备份） |
 
-### 密码保护（当前生效中）
+### 身份验证：**已按要求移除**
 
-站点前面挂了一个 Worker（`worker/index.js`），所有请求先过鉴权再交给静态资源。
+之前放过一版 Basic Auth 密码保护，用户明确说「暂时不用，后续应该也不用验证」，
+所以 `wrangler.jsonc` 里不再挂 `main`，请求直接走静态资源，**不再经过任何 Worker**。
 
-~~~bash
-# 换密码（存在 Worker 的加密变量里，不会进代码、不会进仓库）
-'新密码' | npx wrangler secret put SITE_PASSWORD
-~~~
+`worker/index.js` 保留在仓库里没删 —— 想恢复时按文件头的三步说明改回来即可
+（**注意**：恢复时必须同时加回 `run_worker_first: true`，否则静态资源命中就直接返回、
+根本不进 Worker，鉴权会被静默绕过；这个坑实测踩过）。
 
-两个必须知道的坑：
-
-1. `wrangler.jsonc` 里的 **`run_worker_first: true` 不能删** —— 默认情况下静态资源命中就直接返回、
-   **根本不进 Worker**，密码校验会被完全绕过（实测过：不带密码也是 200）。
-2. 本机访问 `api.cloudflare.com` 需要走代理，否则 `wrangler` 报 `fetch failed`。
-
-想升级成"按邮箱授权 + 可撤销"（Cloudflare Access）时，删掉 `worker/index.js` 与 `main` 字段即可，
-两件事不冲突。
+访问控制如果需要真正做，正确做法是 **Cloudflare Access（邮箱验证 + 白名单）**，
+而不是前端密码；本项目的产物是纯静态的，换平台不用改代码。
 
 Cloudflare 的部署命令：
 
